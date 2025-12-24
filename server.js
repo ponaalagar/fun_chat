@@ -3,6 +3,10 @@ import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import { db } from "./utils/db.js";
+import crypto from "crypto";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,121 +15,378 @@ const app = express();
 const server = createServer(app);
 const wss = new WebSocketServer({ server });
 
-// Serve static files
+const JWT_SECRET = "super-secret-key-change-this-in-prod"; // In prod use .env
+
+// Middleware
+app.use(express.json());
 app.use(express.static(join(__dirname, "public")));
 
-// Chat password
-const CHAT_PASSWORD = "december";
+// Initialize DB
+db.init();
 
-// Store connected clients
-const clients = new Map();
+// --- API Routes ---
 
-wss.on("connection", (ws) => {
-    console.log("New client connected");
+// Register
+app.post("/api/register", async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) return res.status(400).json({ error: "Missing fields" });
+
+        const users = await db.getUsers();
+        if (users.find(u => u.username === username)) {
+            return res.status(400).json({ error: "Username taken" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+
+        const newUser = {
+            id: crypto.randomUUID(),
+            username,
+            password: hashedPassword,
+            role: "user", // Always user, admin is static
+            status: "pending", // Always pending
+            isBlocked: false,
+            createdAt: new Date().toISOString(),
+            ip: userIp
+        };
+
+        users.push(newUser);
+        await db.saveUsers(users);
+
+        res.json({ message: "Registration successful! logical Please wait for admin approval.", status: newUser.status });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Login
+app.post("/api/login", async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        const users = await db.getUsers();
+        const user = users.find(u => u.username === username);
+
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(401).json({ error: "Invalid credentials" });
+        }
+
+        if (user.isBlocked) return res.status(403).json({ error: "Account has been blocked by Admin" });
+        if (user.status !== "active") return res.status(403).json({ error: "Account pending Admin approval" });
+
+        // Update Login IP
+        user.lastLoginIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        await db.saveUsers(users);
+
+        const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: "24h" });
+        res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Middleware for Auth
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+    if (!token) return res.sendStatus(401);
+
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) return res.sendStatus(403);
+        req.user = user;
+        next();
+    });
+};
+
+// Admin Routes
+app.get("/api/users", authenticateToken, async (req, res) => {
+    if (req.user.role !== "admin") return res.sendStatus(403);
+    const users = await db.getUsers();
+    // Send safe info + IP
+    res.json(users.map(u => ({
+        id: u.id,
+        username: u.username,
+        role: u.role,
+        status: u.status,
+        isBlocked: u.isBlocked,
+        ip: u.ip,
+        lastLoginIp: u.lastLoginIp,
+        createdAt: u.createdAt
+    })));
+});
+
+app.put("/api/users/:id/approve", authenticateToken, async (req, res) => {
+    if (req.user.role !== "admin") return res.sendStatus(403);
+    const users = await db.getUsers();
+    const user = users.find(u => u.id === req.params.id);
+    if (user) {
+        user.status = "active";
+        await db.saveUsers(users);
+        res.json({ message: "User approved" });
+    } else {
+        res.status(404).json({ error: "User not found" });
+    }
+});
+
+app.put("/api/users/:id/block", authenticateToken, async (req, res) => {
+    if (req.user.role !== "admin") return res.sendStatus(403);
+    const users = await db.getUsers();
+    const user = users.find(u => u.id === req.params.id);
+    if (user) {
+        user.isBlocked = !user.isBlocked;
+        await db.saveUsers(users);
+        // Disconnect if blocking
+        if (user.isBlocked) disconnectUser(user.username);
+        res.json({ message: user.isBlocked ? "User blocked" : "User unblocked", isBlocked: user.isBlocked });
+    } else {
+        res.status(404).json({ error: "User not found" });
+    }
+});
+
+// Rooms
+app.get("/api/rooms", authenticateToken, async (req, res) => {
+    const rooms = await db.getRooms();
+    res.json(rooms);
+});
+
+app.post("/api/rooms", authenticateToken, async (req, res) => {
+    const { name, type } = req.body;
+    if (!name) return res.status(400).json({ error: "Name required" });
+
+    const rooms = await db.getRooms();
+    if (rooms.find(r => r.name === name)) return res.status(400).json({ error: "Room exists" });
+
+    const newRoom = {
+        id: crypto.randomUUID(),
+        name,
+        type: type || 'chat',
+        createdBy: req.user.username,
+        createdAt: new Date().toISOString()
+    };
+    rooms.push(newRoom);
+    await db.saveRooms(rooms);
+    res.json(newRoom);
+});
+
+// --- WebSocket Logic ---
+
+const clients = new Map(); // ws -> { username, roomId }
+const rooms = new Map(); // roomId -> Set(ws)
+const gameStates = new Map(); // roomId -> { board, turn, xPlayer, oPlayer, winner }
+
+function disconnectUser(username) {
+    for (const [ws, data] of clients.entries()) {
+        if (data.username === username) {
+            ws.close();
+        }
+    }
+}
+
+wss.on("connection", (ws, req) => {
+    // Basic Auth via protocol or query param is tricky with standard WS client in browser
+    // We'll expect an 'auth' message first
     let isAuthenticated = false;
+    let currentUser = null;
 
     ws.on("message", (data) => {
         try {
             const message = JSON.parse(data);
 
-            switch (message.type) {
-                case "join":
-                    // Verify password
-                    if (message.password !== CHAT_PASSWORD) {
-                        ws.send(JSON.stringify({
-                            type: "error",
-                            content: "Invalid password"
-                        }));
+            if (message.type === "auth") {
+                jwt.verify(message.token, JWT_SECRET, (err, decoded) => {
+                    if (err) {
+                        ws.send(JSON.stringify({ type: "error", content: "Invalid token" }));
                         ws.close();
-                        return;
+                    } else {
+                        isAuthenticated = true;
+                        currentUser = decoded;
+                        clients.set(ws, { username: currentUser.username, roomId: null });
+                        ws.send(JSON.stringify({ type: "authenticated", user: currentUser }));
                     }
-                    isAuthenticated = true;
-                    clients.set(ws, message.username);
-                    ws.send(JSON.stringify({ type: "authenticated" }));
-                    broadcast({
-                        type: "system",
-                        content: `${message.username} joined the chat`,
-                        timestamp: new Date().toISOString()
-                    });
-                    broadcast({
-                        type: "users",
-                        users: Array.from(clients.values())
-                    });
-                    break;
+                });
+                return;
+            }
 
-                case "message":
-                    broadcast({
-                        type: "message",
-                        username: clients.get(ws) || "Anonymous",
-                        content: message.content,
-                        timestamp: new Date().toISOString()
-                    });
-                    break;
+            if (!isAuthenticated) return;
 
-                case "typing":
-                    broadcastExcept(ws, {
-                        type: "typing",
-                        username: clients.get(ws)
-                    });
+            const clientData = clients.get(ws);
+
+            switch (message.type) {
+                case "join_room":
+                    handleJoinRoom(ws, clientData, message.roomId);
+                    break;
+                case "leave_room":
+                    handleLeaveRoom(ws, clientData);
+                    break;
+                case "chat_message":
+                    handleChatMessage(ws, clientData, message.content);
+                    break;
+                case "game_join":
+                    handleGameJoin(ws, clientData, message.roomId);
+                    break;
+                case "game_move":
+                    handleGameMove(ws, clientData, message.index);
+                    break;
+                case "game_restart":
+                    handleGameRestart(ws, clientData.roomId);
                     break;
             }
         } catch (error) {
-            console.error("Error parsing message:", error);
+            console.error("WS Error", error);
         }
     });
 
     ws.on("close", () => {
-        const username = clients.get(ws);
+        handleLeaveRoom(ws, clients.get(ws));
         clients.delete(ws);
-        if (username) {
-            broadcast({
-                type: "system",
-                content: `${username} left the chat`,
-                timestamp: new Date().toISOString()
-            });
-            broadcast({
-                type: "users",
-                users: Array.from(clients.values())
-            });
-        }
-        console.log("Client disconnected");
-    });
-
-    ws.on("error", (error) => {
-        console.error("WebSocket error:", error);
     });
 });
 
-function broadcast(message) {
-    const data = JSON.stringify(message);
-    wss.clients.forEach((client) => {
-        if (client.readyState === 1) {
-            client.send(data);
+function handleJoinRoom(ws, clientData, roomId) {
+    if (clientData.roomId) handleLeaveRoom(ws, clientData); // Leave current first
+
+    clientData.roomId = roomId;
+    if (!rooms.has(roomId)) rooms.set(roomId, new Set());
+    rooms.get(roomId).add(ws);
+
+    // Broadcast user joined
+    broadcastToRoom(roomId, {
+        type: "system",
+        content: `${clientData.username} joined the room`
+    });
+
+    // Send room history or user list if needed
+    broadcastRoomUsers(roomId);
+
+    // If game room, send state
+    if (gameStates.has(roomId)) {
+        ws.send(JSON.stringify({ type: "game_state", state: gameStates.get(roomId) }));
+    }
+}
+
+function handleLeaveRoom(ws, clientData) {
+    if (!clientData || !clientData.roomId) return;
+    const roomId = clientData.roomId;
+
+    // Handle Game Leave
+    const gameState = gameStates.get(roomId);
+    if (gameState) {
+        if (gameState.xPlayer === clientData.username) gameState.xPlayer = null;
+        if (gameState.oPlayer === clientData.username) gameState.oPlayer = null;
+        broadcastToRoom(roomId, { type: "game_state", state: gameState });
+    }
+
+    if (rooms.has(roomId)) {
+        rooms.get(roomId).delete(ws);
+        if (rooms.get(roomId).size === 0) {
+            rooms.delete(roomId);
+            // Optionally clean up empty dynamic game states, but keep persistent ones?
+            // For now, keep state in memory until server restart or explicit clear
+        } else {
+            broadcastToRoom(roomId, {
+                type: "system",
+                content: `${clientData.username} left the room`
+            });
+            broadcastRoomUsers(roomId);
         }
+    }
+    clientData.roomId = null;
+}
+
+function handleChatMessage(ws, clientData, content) {
+    if (!clientData.roomId) return;
+    broadcastToRoom(clientData.roomId, {
+        type: "message",
+        username: clientData.username,
+        content,
+        timestamp: new Date().toISOString()
     });
 }
 
-function broadcastExcept(sender, message) {
+function broadcastToRoom(roomId, message) {
+    if (!rooms.has(roomId)) return;
     const data = JSON.stringify(message);
-    wss.clients.forEach((client) => {
-        if (client !== sender && client.readyState === 1) {
-            client.send(data);
-        }
+    rooms.get(roomId).forEach(client => {
+        if (client.readyState === 1) client.send(data);
     });
 }
 
-// Use PORT from environment or default to 3000
+function broadcastRoomUsers(roomId) {
+    if (!rooms.has(roomId)) return;
+    const userList = Array.from(rooms.get(roomId)).map(c => clients.get(c).username);
+    broadcastToRoom(roomId, { type: "room_users", users: userList });
+}
+
+// --- Game Logic ---
+
+function handleGameJoin(ws, clientData, roomId) {
+    if (!gameStates.has(roomId)) {
+        gameStates.set(roomId, {
+            board: Array(9).fill(null),
+            turn: 'X',
+            xPlayer: null,
+            oPlayer: null,
+            winner: null
+        });
+    }
+
+    const state = gameStates.get(roomId);
+    if (!state.xPlayer) {
+        state.xPlayer = clientData.username;
+    } else if (!state.oPlayer && state.xPlayer !== clientData.username) {
+        state.oPlayer = clientData.username;
+    }
+
+    broadcastToRoom(roomId, { type: "game_state", state });
+}
+
+function handleGameMove(ws, clientData, index) {
+    const roomId = clientData.roomId;
+    const state = gameStates.get(roomId);
+    if (!state || state.winner || state.board[index]) return;
+
+    // Check turn
+    const isX = clientData.username === state.xPlayer;
+    const isO = clientData.username === state.oPlayer;
+    if (state.turn === 'X' && !isX) return;
+    if (state.turn === 'O' && !isO) return;
+
+    // Make move
+    state.board[index] = state.turn;
+
+    // Check win
+    if (checkWin(state.board)) {
+        state.winner = state.turn;
+    } else if (state.board.every(cell => cell)) {
+        state.winner = 'draw';
+    } else {
+        state.turn = state.turn === 'X' ? 'O' : 'X';
+    }
+
+    broadcastToRoom(roomId, { type: "game_state", state });
+}
+
+function handleGameRestart(ws, roomId) {
+    const state = gameStates.get(roomId);
+    if (state) {
+        state.board = Array(9).fill(null);
+        state.turn = 'X';
+        state.winner = null;
+        broadcastToRoom(roomId, { type: "game_state", state });
+    }
+}
+
+function checkWin(board) {
+    const lines = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
+    ];
+    return lines.some(([a, b, c]) => board[a] && board[a] === board[b] && board[a] === board[c]);
+}
+
+// Start Server
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, "0.0.0.0", () => {
-    console.log(`
-╔════════════════════════════════════════════════════════════╗
-║           WebSocket Chat Server Running!                   ║
-╠════════════════════════════════════════════════════════════╣
-║  Local:    http://localhost:${PORT}                          ║
-║  Network:  http://<YOUR_SERVER_IP>:${PORT}                   ║
-║                                                            ║
-║  Share the Network URL with others to collaborate!         ║
-╚════════════════════════════════════════════════════════════╝
-    `);
+    console.log(`Server running on port ${PORT}`);
 });

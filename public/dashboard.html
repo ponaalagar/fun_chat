@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Nexus</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar"
+            style="width: 100%; max-width: 400px; margin: 0 auto; border: none; background: transparent;">
+            <div class="sidebar-header">
+                <h2>NEXUS DASHBOARD</h2>
+                <button class="btn-icon" onclick="logout()" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+            </div>
+
+            <div class="user-profile">
+                <div class="avatar" id="user-avatar">U</div>
+                <div>
+                    <div style="font-weight: 600;" id="current-username">User</div>
+                    <div style="font-size: 0.75rem; color: #22c55e;" id="user-role">Role</div>
+                </div>
+            </div>
+
+            <!-- Admin Panel (Hidden for users) -->
+            <div id="admin-panel" class="hidden" style="margin-bottom: 2rem;">
+                <div class="section-title" style="color: var(--accent);">Admin Controls</div>
+                <div class="room-list" id="pending-users-list">
+                    <!-- Pending Users injected here -->
+                </div>
+            </div>
+
+            <div class="section-title">Available Rooms</div>
+            <div class="room-list" id="room-list">
+                <!-- Rooms injected here -->
+            </div>
+
+            <button class="btn create-room-btn" onclick="createRoom()">
+                <i class="fas fa-plus"></i> Create New Room
+            </button>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Nexus</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container" style="max-width: 800px; margin: 20px auto; height: 90vh;">
+        <div class="main-content">
+            <div class="chat-header">
+                <div>
+                    <h2 id="room-name">Loading...</h2>
+                    <div class="connection-status">
+                        <span class="status-dot" id="status-dot"></span>
+                        <span id="status-text">Connecting...</span>
+                    </div>
+                </div>
+                <button class="btn-icon" onclick="window.location.href='dashboard.html'" title="Back"><i
+                        class="fas fa-arrow-left"></i></button>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <!-- Messages -->
+            </div>
+
+            <div class="chat-input-area">
+                <input type="text" id="message-input" class="form-input" placeholder="Type your message...">
+                <button class="btn" style="width: auto;" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/chat.js"></script>
+</body>
+
+</html>

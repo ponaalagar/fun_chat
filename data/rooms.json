@@ -1,0 +1,30 @@
+[
+  {
+    "id": "default-room-1",
+    "name": "General Chat",
+    "type": "chat",
+    "createdBy": "system",
+    "createdAt": "2025-12-24T08:05:34.429Z"
+  },
+  {
+    "id": "tic-tac-toe-1",
+    "name": "Tic Tac Toe Lounge",
+    "type": "game",
+    "createdBy": "system",
+    "createdAt": "2025-12-24T08:05:34.429Z"
+  },
+  {
+    "id": "da047350-44e4-4eab-bc95-0563a2fadf44",
+    "name": "new",
+    "type": "game",
+    "createdBy": "ponaalagar",
+    "createdAt": "2025-12-24T08:07:06.484Z"
+  },
+  {
+    "id": "45fcd60f-142a-4d12-b471-9ca4ce0b11f7",
+    "name": "thunder",
+    "type": "chat",
+    "createdBy": "ponaalagar",
+    "createdAt": "2025-12-24T08:07:49.590Z"
+  }
+]

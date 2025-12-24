@@ -4,15 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Nexus</title>
+    <title>Register - Nexus</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
     <div class="auth-container">
         <div class="auth-header">
-            <h1>Nexus Login</h1>
-            <p>Welcome back! Please sign in.</p>
+            <h1>Join Nexus</h1>
+            <p>Create your account today.</p>
         </div>
         <div class="form-group">
             <input type="text" id="username" class="form-input" placeholder="Username" autofocus>
@@ -20,22 +20,16 @@
         <div class="form-group">
             <input type="password" id="password" class="form-input" placeholder="Password">
         </div>
-        <button class="btn" onclick="handleLogin()">Sign In</button>
-        <button class="btn btn-secondary" onclick="window.location.href='register.html'">Create Account</button>
+        <button class="btn" onclick="handleRegister()">Sign Up</button>
+        <button class="btn btn-secondary" onclick="window.location.href='index.html'">Back to Login</button>
     </div>
 
     <script src="js/auth.js"></script>
     <script>
-        // Inline script to init page specific logic or keep it in auth.js?
-        // Let's keep it simple here.
-        if (localStorage.getItem('token')) {
-            window.location.href = 'dashboard.html';
-        }
-
-        async function handleLogin() {
+        async function handleRegister() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
-            await login(username, password);
+            await register(username, password);
         }
     </script>
 </body>

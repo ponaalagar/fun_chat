@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game - Nexus</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container" style="max-width: 600px; margin: 20px auto; height: 90vh;">
+        <div class="main-content">
+            <div class="chat-header">
+                <div>
+                    <h2 id="room-name">Tic Tac Toe</h2>
+                    <div class="connection-status">
+                        <span class="status-dot" id="status-dot"></span>
+                        <span id="status-text">Connecting...</span>
+                    </div>
+                </div>
+                <div>
+                    <button class="btn" style="width: auto; padding: 8px 16px; margin-right: 10px;"
+                        onclick="restartGame()">Restart</button>
+                    <button class="btn-icon" onclick="window.location.href='dashboard.html'" title="Back"><i
+                            class="fas fa-arrow-left"></i></button>
+                </div>
+            </div>
+
+            <div class="game-container">
+                <div id="game-status" class="game-status">Connecting...</div>
+                <div class="game-board" id="game-board">
+                    <!-- Board cells -->
+                </div>
+            </div>
+
+            <!-- Mini Chat Overlay or Section could go here, omitting for simplicity -->
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/game.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,51 @@
+[
+  {
+    "id": "fff80984-ef4d-454b-8652-6feb706d1489",
+    "username": "ponaalagar",
+    "password": "$2b$10$lbnJQeG0McJum4aNo79XlO1j.1THMKu9kxkhc4srQX4JYZ3ZCV4W2",
+    "role": "admin",
+    "status": "active",
+    "isBlocked": false,
+    "createdAt": "2025-12-24T08:06:25.468Z"
+  },
+  {
+    "id": "d8906bb9-9351-4e15-bdc7-c7b640456cc4",
+    "username": "new",
+    "password": "$2b$10$ymv6eq8CnPPGZoyNHSGPq.jAEUi5r5Yv05lurr9evLzN0OX1JxoAy",
+    "role": "user",
+    "status": "pending",
+    "isBlocked": false,
+    "createdAt": "2025-12-24T08:08:49.658Z"
+  },
+  {
+    "id": "2913e63b-c72c-4262-8595-d51c76546384",
+    "username": "raja",
+    "password": "$2b$10$Y6aoHxTF6LEJ1s9bKK7kauhYPqsQ2wa7J35d3IArLFwPkw4TWCD6W",
+    "role": "user",
+    "status": "pending",
+    "isBlocked": false,
+    "createdAt": "2025-12-24T08:09:23.679Z"
+  },
+  {
+    "id": "static-admin-id",
+    "username": "admin",
+    "password": "$2b$10$5cbjcldHCEO6VK85MUsRne.hyMgKYuVEZe6XnTvIsp/f8don6qsEq",
+    "role": "admin",
+    "status": "active",
+    "isBlocked": false,
+    "createdAt": "2025-12-24T08:17:50.459Z",
+    "ip": "127.0.0.1",
+    "lastLoginIp": "127.0.0.1"
+  },
+  {
+    "id": "418212fb-19a0-4897-8c09-d30450a98d1f",
+    "username": "jackson",
+    "password": "$2b$10$.ZY2v5q7NCsmHlpFM2HzEO/IkvQKKyiXdtipi8RoPc5Jo4/oGUc52",
+    "role": "user",
+    "status": "active",
+    "isBlocked": false,
+    "createdAt": "2025-12-24T08:22:16.714Z",
+    "ip": "127.0.0.1",
+    "lastLoginIp": "127.0.0.1"
+  }
+]
