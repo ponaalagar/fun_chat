@@ -9,24 +9,6 @@
     "createdAt": "2025-12-24T08:06:25.468Z"
   },
   {
-    "id": "d8906bb9-9351-4e15-bdc7-c7b640456cc4",
-    "username": "new",
-    "password": "$2b$10$ymv6eq8CnPPGZoyNHSGPq.jAEUi5r5Yv05lurr9evLzN0OX1JxoAy",
-    "role": "user",
-    "status": "pending",
-    "isBlocked": false,
-    "createdAt": "2025-12-24T08:08:49.658Z"
-  },
-  {
-    "id": "2913e63b-c72c-4262-8595-d51c76546384",
-    "username": "raja",
-    "password": "$2b$10$Y6aoHxTF6LEJ1s9bKK7kauhYPqsQ2wa7J35d3IArLFwPkw4TWCD6W",
-    "role": "user",
-    "status": "pending",
-    "isBlocked": false,
-    "createdAt": "2025-12-24T08:09:23.679Z"
-  },
-  {
     "id": "static-admin-id",
     "username": "admin",
     "password": "$2b$10$5cbjcldHCEO6VK85MUsRne.hyMgKYuVEZe6XnTvIsp/f8don6qsEq",

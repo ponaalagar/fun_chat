@@ -8,7 +8,6 @@ async function initDashboard() {
 
     if (user.role === 'admin') {
         document.getElementById('admin-panel').classList.remove('hidden');
-        fetchPendingUsers();
     }
 
     fetchRooms();
@@ -61,48 +60,5 @@ async function createRoom() {
     } catch (e) { console.error(e); }
 }
 
-// Admin Functions
-async function fetchPendingUsers() {
-    try {
-        const res = await fetch('/api/users', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) {
-            const users = await res.json();
-            renderPendingUsers(users);
-        }
-    } catch (e) { console.error(e); }
-}
-
-function renderPendingUsers(users) {
-    const list = document.getElementById('pending-users-list');
-    const pending = users.filter(u => u.status === 'pending');
-
-    if (pending.length === 0) {
-        list.innerHTML = '<div style="padding:10px; opacity:0.5; font-size:0.9rem;">No pending requests</div>';
-        return;
-    }
-
-    list.innerHTML = pending.map(u => `
-        <div class="room-item" style="cursor: default;">
-            <div style="flex:1;">
-                <div>${u.username}</div>
-                <div style="font-size:0.7rem; opacity:0.6">IP: ${u.ip || 'Unknown'}</div>
-            </div>
-            <button class="admin-badge" style="border:none; cursor:pointer;" onclick="approveUser('${u.id}')">Accept</button>
-        </div>
-    `).join('');
-}
-
-async function approveUser(id) {
-    if (!confirm('Approve this user?')) return;
-    try {
-        const res = await fetch(`/api/users/${id}/approve`, {
-            method: 'PUT',
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (res.ok) fetchPendingUsers();
-    } catch (e) { console.error(e); }
-}
-
 initDashboard();
+

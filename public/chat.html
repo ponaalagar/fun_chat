@@ -29,10 +29,42 @@
             </div>
 
             <div class="chat-input-area">
+                <input type="file" id="file-input" class="hidden"
+                    accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt,.zip,.rar">
+                <button class="btn-icon attach-btn" onclick="document.getElementById('file-input').click()"
+                    title="Attach file">
+                    <i class="fas fa-paperclip"></i>
+                </button>
+                <button class="btn-icon sticker-btn" onclick="toggleStickerPicker()" title="Stickers">
+                    <i class="fas fa-face-smile"></i>
+                </button>
                 <input type="text" id="message-input" class="form-input" placeholder="Type your message...">
                 <button class="btn" style="width: auto;" onclick="sendMessage()">
                     <i class="fas fa-paper-plane"></i>
                 </button>
+            </div>
+
+            <!-- Sticker Picker -->
+            <div id="sticker-picker" class="sticker-picker hidden">
+                <div class="sticker-grid" id="sticker-grid">
+                    <!-- Stickers injected by JS -->
+                </div>
+            </div>
+
+            <!-- Reaction Picker (shown on message hover) -->
+            <div id="reaction-picker" class="reaction-picker hidden">
+                <span class="reaction-option" data-reaction="👍">👍</span>
+                <span class="reaction-option" data-reaction="❤️">❤️</span>
+                <span class="reaction-option" data-reaction="😂">😂</span>
+                <span class="reaction-option" data-reaction="😮">😮</span>
+                <span class="reaction-option" data-reaction="😢">😢</span>
+                <span class="reaction-option" data-reaction="🔥">🔥</span>
+            </div>
+
+            <!-- Image Lightbox -->
+            <div id="lightbox" class="lightbox hidden" onclick="closeLightbox()">
+                <span class="lightbox-close">&times;</span>
+                <img id="lightbox-image" src="" alt="Preview">
             </div>
         </div>
     </div>

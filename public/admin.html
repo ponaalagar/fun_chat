@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Nexus</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container" style="max-width: 900px; margin: 20px auto;">
+        <div class="main-content">
+            <div class="chat-header">
+                <div>
+                    <h2><i class="fas fa-shield-halved" style="color: var(--accent);"></i> Admin Panel</h2>
+                    <div class="connection-status">
+                        <span>Manage Users & Security</span>
+                    </div>
+                </div>
+                <button class="btn-icon" onclick="window.location.href='dashboard.html'" title="Back to Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+
+            <div class="admin-content">
+                <!-- Pending Users Section -->
+                <div class="admin-section">
+                    <div class="section-title" style="color: var(--accent); font-size: 1rem;">
+                        <i class="fas fa-user-clock"></i> Pending Approval
+                    </div>
+                    <div class="user-table" id="pending-users-list">
+                        <div class="loading-text">Loading pending users...</div>
+                    </div>
+                </div>
+
+                <!-- All Users Section -->
+                <div class="admin-section">
+                    <div class="section-title" style="color: var(--primary); font-size: 1rem;">
+                        <i class="fas fa-users"></i> All Registered Users
+                    </div>
+                    <div class="user-table" id="all-users-list">
+                        <div class="loading-text">Loading users...</div>
+                    </div>
+                </div>
+
+                <!-- Blocked IPs Section -->
+                <div class="admin-section">
+                    <div class="section-title" style="color: var(--danger); font-size: 1rem;">
+                        <i class="fas fa-ban"></i> Blocked IPs
+                    </div>
+                    <div class="user-table" id="blocked-ips-list">
+                        <div class="loading-text">Loading blocked IPs...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

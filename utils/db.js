@@ -18,6 +18,7 @@ async function ensureDataDir() {
 export const db = {
     users: path.join(DATA_DIR, 'users.json'),
     rooms: path.join(DATA_DIR, 'rooms.json'),
+    blockedIps: path.join(DATA_DIR, 'blocked-ips.json'),
 
     async read(file) {
         await ensureDataDir();
@@ -50,6 +51,14 @@ export const db = {
 
     async saveRooms(rooms) {
         return this.write(this.rooms, rooms);
+    },
+
+    async getBlockedIps() {
+        return this.read(this.blockedIps);
+    },
+
+    async saveBlockedIps(ips) {
+        return this.write(this.blockedIps, ips);
     },
 
     // Initialize default data if missing

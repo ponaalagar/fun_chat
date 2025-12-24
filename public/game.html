@@ -35,10 +35,20 @@
                 </div>
             </div>
 
-            <!-- Mini Chat Overlay or Section could go here, omitting for simplicity -->
+            <!-- Celebration Overlays -->
+            <div id="celebration-overlay" class="celebration-overlay hidden">
+                <div class="celebration-content">
+                    <div class="celebration-icon" id="celebration-icon">🎉</div>
+                    <div class="celebration-title" id="celebration-title">Victory!</div>
+                    <div class="celebration-subtitle" id="celebration-subtitle">You are the champion!</div>
+                    <button class="btn celebration-btn" onclick="dismissCelebration()">Continue</button>
+                </div>
+                <div class="rain-container" id="rain-container"></div>
+            </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/game.js"></script>
 </body>
